@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Repo</title>
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    <link href="plugins/fancybox/jquery.fancybox.css" rel="stylesheet">
+    <link href="css/animate.min.css" rel="stylesheet">
+    <link href="css/style.min.css" rel="stylesheet">
+    <link href="css/page-bar.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="css/webuploader.css" />
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <style type="text/css">
+    .img-cell {
+        padding: 3px;
+    }
+
+    .pagination {
+        font-size: 14px;
+    }
+
+    .pagination a {
+        border-radius: 0px !important;
+        margin-right: 5px;
+    }
+
+    .img-link {
+        font-size: 14px;
+    }
+
+    .img-cell img {
+        padding: 4px 4px 0px 4px;
+    }
+
+    .img-cell .thumbnail {
+        margin-bottom: 10px;
+    }
+
+    .img-link div {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #ddd;
+        padding: 5px;
+    }
+
+    .pagination {
+        margin: 0;
+        margin-bottom: 30px;
+    }
+
+    .modal-content {
+        min-width: 700px;
+    }
+
+    .modal-body {
+        min-width: 700px;
+        min-height: 400px;
+    }
+    </style>
+</head>
+
+<body class="gray-bg">
+    <div class="wrapper wrapper-content">
+        <div class="row">
+            <div class="col-sm-12">
+                <div class="ibox float-e-margins">
+                    <div class="ibox-title">
+                        <h5>Image Repository</h5>
+                        <div class="ibox-tools">
+                            <a class="collapse-link">
+                                <i class="glyphicon glyphicon-cloud-upload upload-icon-btn sr-only" data-toggle="modal" data-target="#uploadModal"></i>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="ibox-content">
+                        <div class="row img-list">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div clas="row page-bar">
+            <ul class="pagination pull-right">
+            </ul>
+        </div>
+    </div>
+    <div class="modal fade" id="uploadModal" tabindex="-1" role="dialog" aria-labelledby="uploadModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+                        &times;
+                    </button>
+                    <h4 class="modal-title" id="myModalLabel">
+                    上传图片
+                </h4>
+                </div>
+                <div class="modal-body">
+                    <div id="uploader">
+                        <div class="queueList">
+                            <div id="dndArea" class="placeholder">
+                                <div id="filePicker"></div>
+                                <p>或将照片拖到这里，单次最多可选10张</p>
+                            </div>
+                        </div>
+                        <div class="statusBar" style="display:none;">
+                            <div class="progress">
+                                <span class="text">0%</span>
+                                <span class="percentage"></span>
+                            </div>
+                            <div class="info"></div>
+                            <div class="btns">
+                                <div id="filePicker2"></div>
+                                <div class="uploadBtn">开始上传</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="js/webuploader.js"></script>
+    <script type="text/javascript" src="js/upload.js"></script>
+    <script type="text/javascript" src="js/clipboard.min.js"></script>
+    <script src="plugins/peity/jquery.peity.min.js"></script>
+    <script src="plugins/fancybox/jquery.fancybox.js"></script>
+    <script>
+    $(document).ready(function() {
+        var pageTotal, pageSize = 12,
+            pageIndex = 0,isLogin;
+        var template = '<div class="col-sm-6 col-md-3 img-cell">\n\
+                                <div class="thumbnail">\n\
+                                    <img data-src="holder.js/300x300" src="[(Thumbnail_SRC)]" />\n\
+                                    <div class="caption">\n\
+                                        <a class="fancybox-inline" href="#[(Img_NUM)]" title="图片信息">\n\
+                                            <div style="display:none" class="img-link" id="[(Img_NUM)]">\n\
+                                                <div>链接：[(SRC)]</div>\n\
+                                                <div>上传时间：[(AddTime)]</div>\n\
+                                            </div>\n\
+                                            <i class="glyphicon glyphicon-link"></i>\n\
+                                        </a>\n\
+                                        <a class="fancybox" href="[(SRC)]" title="[(SRC)]">\n\
+                                            <i class="glyphicon glyphicon-zoom-in"></i>\n\
+                                        </a>\n\
+                                        <a class="delete-btn sr-only" data-id="[(ID)]" href="javascript:;" title="[(SRC)]">\n\
+                                            <i class="glyphicon glyphicon-trash"></i>\n\
+                                        </a>\n\
+                                    </div>\n\
+                                </div>\n\
+                            </div>';
+        var server_base = "/server/";
+        var oss_base = "https://image.cafetime.cc/gallery/";
+        $(".fancybox").fancybox({
+            openEffect: "none",
+            closeEffect: "none"
+        });
+        $(".fancybox-inline").fancybox({
+            height: "auto",
+        });
+
+        $(".upload-btn").click(function() {
+            console.log(111)
+            $("#upload-file-list").submit();
+        });
+
+
+        $('#uploadModal').on('shown.bs.modal', function() {
+            loadUpload();
+        });
+        loadData(0, pageSize);
+
+        function loadData(pageIndex, pageSize) {
+            $(".img-list").html('');
+            var xhrurl = server_base + "list?pgi=" + pageIndex + "&pgs=" + pageSize;
+            $.ajax({
+                type: "get",
+                async: false,
+                url: xhrurl,
+                cache: false,
+                dataType: "jsonp",
+                jsonp: "callback",
+                jsonpCallback: "jsonp",
+                success: function(json) {
+                    if (json&&json.Total) {
+                        var total = json.Total;
+                        var images = json.Images;
+                        for (var i = 0; i < images.length; i++) {
+                            var temp = template.replace(/\[\(SRC\)\]/g, oss_base + images[i].Path)
+                                .replace(/\[\(Thumbnail_SRC\)\]/g, oss_base + images[i].Path.substring(0,images[i].Path.lastIndexOf('.'))+"_thumbnail"+images[i].Path.substring(images[i].Path.lastIndexOf('.')))
+                                .replace(/\[\(AddTime\)\]/g, images[i].AddTime.replace(/\.\d*\w/g, "").replace(/-/g, "/").replace(/T/g, " "))
+                                .replace(/\[\(ID\)\]/g, images[i].Id)
+                                .replace(/\[\(Img_NUM\)\]/g, "img"+i);
+                            $(".img-list").append(temp)
+                        }
+                        loadPageBar(total, pageIndex, pageSize);
+                        scalaImg();
+                        if (isLogin) {
+                            afterLogin();
+                        }
+                    }
+                },
+                error: function(e) {
+                    alert("error");
+                }
+            });
+        }
+
+        function scalaImg() {
+            $(".thumbnail").each(function() {
+                $img = $(this).find("img");
+                imgHeight = 0;
+                imgWidth = $(".thumbnail").width()
+                $img.load(function() {
+                     $wrapper = $(this).parent();
+                    if (imgHeight == 0) imgHeight = $(".thumbnail").height()
+                    var adjustHeight = (imgWidth - 8) * (167 / 327);
+                    if (Math.abs($(this).height() - adjustHeight) > 10) {
+                        var mgHeight = (adjustHeight - $(this).height()) / 2;
+                        if (mgHeight > 0) {
+                            $(this).css("margin-bottom", mgHeight);
+                            $(this).css("margin-top", mgHeight);
+                        }
+                    }
+                    $(this).css("max-height", adjustHeight+5);
+                    $wrapper.css("min-height",adjustHeight+60);
+                });
+            });
+        }
+        $(window).resize(function() {
+            $(".thumbnail").each(function() {
+                $img = $(this).find("img");
+                var adjustHeight = ($(".thumbnail").width()-8) * (167 / 327);
+                if (Math.abs($img.height() - adjustHeight) > 10) {
+                    var mgHeight = (adjustHeight - $(this).height()) / 2;
+                    if (mgHeight > 0) {
+                        $img.css("margin-bottom", mgHeight);
+                        $img.css("margin-top", mgHeight);
+                    }
+                }else {
+                    $img.css("margin-bottom", 0);
+                    $img.css("margin-top", 0);
+                }
+                $img.css("max-height", adjustHeight+5);
+                $img.css("max-height", adjustHeight+5);
+                $(this).css("min-height",adjustHeight+60);
+            });
+        });
+
+        function loadPageBar(total, index, size) {
+            pageTotal = parseInt(total % size == 0 ? total / size : (total / size + 1));
+            pageSize = size;
+            $(".pagination").html("");
+            var ele = '<li ' + (index == 0 ? 'class="disabled"' : '') + '><a href="javascript:;" class="go-page Prev">Prev</a></li>';
+            $(".pagination").append(ele);
+            if (pageTotal > 5) {
+                var i = 1;
+                if (pageTotal - (index + 1) <= 2) {
+                    i = pageTotal - 4;
+                } else if (index <= 3) {
+                    i = 1;
+                } else {
+                    begin = index - 2;
+                }
+                for (var j = 0; j < 5; j++, i++) {
+                    var ele = '<li ' + ((index + 1) == i ? 'class="active"' : '') + '><a href="javascript:;" data-index="' + i + '" class="go-page">' + i + '</a></li>';
+                    $(".pagination").append(ele);
+                }
+            } else {
+                for (var i = 1; i <= pageTotal; i++) {
+                    var ele = '<li ' + ((index + 1) == i ? 'class="active"' : '') + '><a href="javascript:;" data-index="' + i + '" class="go-page">' + i + '</a></li>';
+                    $(".pagination").append(ele);
+                }
+            }
+            var ele = '<li ' + (index == (pageTotal - 1) ? 'class="disabled"' : '') + '><a href="javascript:;" class="go-page Next">Next</a></li>';
+            $(".pagination").append(ele);
+
+        }
+        $(".img-list").on('click', '.delete-btn', function() {
+            if(window.confirm('你确定要删除吗？')){
+                var id = $(this).attr("data-id");
+                var xhrurl = server_base + "delete?id=" + id;
+                $.ajax({
+                    type: "get",
+                    async: false,
+                    url: xhrurl,
+                    cache: false,
+                    dataType: "jsonp",
+                    jsonp: "callback",
+                    jsonpCallback: "jsonp",
+                    success: function(json) {
+                        if (json && json.Message=='success') {
+                            loadData(pageIndex,pageSize)
+                            if (isLogin) {
+                                afterLogin();
+                            }
+                        }
+                    },
+                    error: function(e) {
+                        alert("error");
+                    }
+                });
+            }
+        });
+        $(".pagination").on('click', '.go-page', function() {
+            var index = 0;
+            if ($(this).hasClass('Next')) {
+                if (pageIndex == pageTotal - 1) {
+                    return;
+                }
+                index = ++pageIndex;
+            } else if ($(this).hasClass('Prev')) {
+                if (pageIndex == 0) {
+                    return;
+                }
+                index = --pageIndex;
+            } else {
+                index = parseInt($(this).attr("data-index")) - 1;
+                pageIndex = index;
+            }
+            loadData(index, pageSize);
+        });
+
+        // 登录处理
+        $(function() {
+            var xhrurl = server_base + "login_info";
+            $.ajax({
+                type: "get",
+                async: false,
+                url: xhrurl,
+                cache: false,
+                dataType: "jsonp",
+                jsonp: "callback",
+                jsonpCallback: "jsonp",
+                success: function(json) {
+                    if (json) {
+                        isLogin = json.IsLogin
+                        if (isLogin) {
+                            afterLogin();
+                        }
+                    }
+                },
+                error: function(e) {
+                    alert("error");
+                }
+            });
+        });
+        function afterLogin(){
+            $(".upload-icon-btn").removeClass("sr-only")
+                            $(".delete-btn").each(function() {
+                                $(this).removeClass("sr-only")
+                            });
+        }
+
+    });
+    </script>
+</body>
+
+</html>
